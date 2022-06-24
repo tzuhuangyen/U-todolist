@@ -101,66 +101,70 @@ add.addEventListener("click", (e) => {
   section.appendChild(todo);
 });
 
-//新開網頁後 把舊資料loading 到頁面
-let myList = localStorage.getItem("list");
-if (myList !== null) {
-  let myListArray = JSON.parse(myList);
-  myListArray.forEach((item) => {
-    //create a todo
-    let todo = document.createElement("div");
-    todo.classList.add("todo");
-    let text = document.createElement("p");
-    text.classList.add("todo-text");
-    text.innerText = item.todoText;
-    let time = document.createElement("p");
-    time.classList.add("todo-time");
-    time.innerText = item.todoMonth + "/" + item.todoDate;
-    todo.appendChild(text);
-    todo.appendChild(time);
+loadDate();
+function loadDate() {
+  //新開網頁後 把舊資料loading 到頁面
+  let myList = localStorage.getItem("list");
+  if (myList !== null) {
+    let myListArray = JSON.parse(myList);
+    myListArray.forEach((item) => {
+      //create a todo
+      let todo = document.createElement("div");
+      todo.classList.add("todo");
+      let text = document.createElement("p");
+      text.classList.add("todo-text");
+      text.innerText = item.todoText;
+      let time = document.createElement("p");
+      time.classList.add("todo-time");
+      time.innerText = item.todoMonth + "/" + item.todoDate;
+      todo.appendChild(text);
+      todo.appendChild(time);
 
-    //create check and bin
-    let completeButton = document.createElement("button");
-    completeButton.classList.add("Complete");
-    completeButton.innerHTML = '<i class="fa-solid fa-check"></i>';
-    //完成鈕關開設定
-    completeButton.addEventListener("click", (e) => {
-      let todoItem = e.target.parentElement;
-      todoItem.classList.toggle("done");
-    });
-    //create delete button
-    let deleteButton = document.createElement("button");
-    deleteButton.classList.add("Delete");
-    deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
-    //刪除紐開關設定
-    deleteButton.addEventListener("click", (e) => {
-      let todoItem = e.target.parentElement;
+      //create check and bin
+      let completeButton = document.createElement("button");
+      completeButton.classList.add("Complete");
+      completeButton.innerHTML = '<i class="fa-solid fa-check"></i>';
+      //完成鈕關開設定
+      completeButton.addEventListener("click", (e) => {
+        let todoItem = e.target.parentElement;
+        todoItem.classList.toggle("done");
+      });
+      //create delete button
+      let deleteButton = document.createElement("button");
+      deleteButton.classList.add("Delete");
+      deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+      //刪除紐開關設定
+      deleteButton.addEventListener("click", (e) => {
+        let todoItem = e.target.parentElement;
 
-      //按下刪除鍵後會有原本的地方會有空格 因scrollDown還存在html so,
-      //當scrollDown動畫結束時 再remove 所以可以使用callback
-      todoItem.addEventListener("animationend", () => {
-        //remove data from local storage
-        let text = todoItem.children[0].innerText;
-        let myListArray = JSON.parse(localStorage.getItem("list"));
-        myListArray.forEach((item, index) => {
-          if (item.todoText == text) {
-            myListArray.splice(index, 1);
-            localStorage.setItem("list", JSON.stringify(myListArray));
-          }
+        //按下刪除鍵後會有原本的地方會有空格 因scrollDown還存在html so,
+        //當scrollDown動畫結束時 再remove 所以可以使用callback
+        todoItem.addEventListener("animationend", () => {
+          //remove data from local storage
+          let text = todoItem.children[0].innerText;
+          let myListArray = JSON.parse(localStorage.getItem("list"));
+          myListArray.forEach((item, index) => {
+            if (item.todoText == text) {
+              myListArray.splice(index, 1);
+              localStorage.setItem("list", JSON.stringify(myListArray));
+            }
+          });
+          //這個remove只是從html結構移除
+          todoItem.remove();
         });
-        //這個remove只是從html結構移除
-        todoItem.remove();
+
+        //按下刪除按鈕後 下面的事項會逐漸縮小
+        todoItem.style.animation = "scaleDown 0.3s forwards";
       });
 
-      //按下刪除按鈕後 下面的事項會逐漸縮小
-      todoItem.style.animation = "scaleDown 0.3s forwards";
+      todo.appendChild(completeButton);
+      todo.appendChild(deleteButton);
+
+      section.appendChild(todo);
     });
-
-    todo.appendChild(completeButton);
-    todo.appendChild(deleteButton);
-
-    section.appendChild(todo);
-  });
+  }
 }
+
 //篩選合併演算法
 function mergeTime(arr1, arr2) {
   let result = [];
@@ -168,14 +172,14 @@ function mergeTime(arr1, arr2) {
   let j = 0;
 
   while (i < arr1.length && j < arr2.length) {
-    if (arr1[i].todoMonth > arr2[j].todoMonth) {
+    if (Number(arr1[i].todoMonth) > Number(arr2[j].todoMonth)) {
       result.push(arr2[j]);
       j++;
-    } else if (arr1[i].todoMonth < arr2[j].todoMonth) {
+    } else if (Number(arr1[i].todoMonth) < Number(arr2[j].todoMonth)) {
       result.push(arr1[i]);
       i++;
-    } else if (arr1[i].todoMonth == arr2[j].todoMonth) {
-      if (arr1[i].todoDate > arr2[j].todoDate);
+    } else if (Number(arr1[i].todoMonth) == Number(arr2[j].todoMonth)) {
+      if (Number(arr1[i].todoDate) > Number(arr2[j].todoDate));
       result.push(arr2[j]);
       j++;
     } else {
@@ -194,14 +198,28 @@ function mergeTime(arr1, arr2) {
   return result;
 }
 
-function mergeSore(arr) {
+function mergeSort(arr) {
   if (arr.length === 1) {
     return arr;
   } else {
     let middle = Math.floor(arr.length / 2);
     let right = arr.slice(0, middle);
     let left = arr.slice(middle, arr.length);
-    return mergeTime(mergeSore(right), mergeSore(left));
+    return mergeTime(mergeSort(right), mergeSort(left));
   }
 }
-console.log(mergeSore(JSON.parse(localStorage.getItem("list"))));
+
+let sortButton = document.querySelector("div.sort button");
+sortButton.addEventListener("click", () => {
+  //先排列轉換資料 sort date
+  let sortedArray = mergeSort(JSON.parse(localStorage.getItem("list")));
+  localStorage.setItem("list", JSON.stringify(sortedArray));
+  //remove date
+  let len = section.children.length;
+  for (let i = 0; i < len; i++) {
+    section.children[0].remove();
+  }
+
+  //重新下載並排列順序
+  loadDate();
+});
